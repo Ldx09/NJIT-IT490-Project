@@ -1,81 +1,83 @@
 <?php
 session_start();
 
-$username = "";
-$errors   = [];
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
+    $username = $_POST["username"] ?? "";
+    $password = $_POST["password"] ?? "";
+    $confirm  = $_POST["confirm"] ?? "";
 
-if (isset($_POST['reg_user'])) {
-
-  // receive input
-  $username   = trim($_POST['username'] ?? '');
-  $password_1 = $_POST['password_1'] ?? '';
-  $password_2 = $_POST['password_2'] ?? '';
-
-  // validation
-  if ($username === '') { $errors[] = "Username is required"; }
-  if ($password_1 === '') { $errors[] = "Password is required"; }
-  if (strlen($password_1) < 6) { $errors[] = "Password must be at least 6 characters"; }
-  if ($password_1 !== $password_2) { $errors[] = "Passwords do not match"; }
-
-  // send to backend
-  if (count($errors) === 0) {
-    try {
-      $client = new rabbitMQClient($iniFile, $serverKey);
-
-      $request = [
-        "type"     => "register",
-        "username" => $username,
-        "password" => $password_1
-      ];
-
-      $response = $client->send_request($request);
-
-      if ($response === "ok" || $response === true) {
-        $_SESSION['username'] = $username;
-        $_SESSION['success']  = "Registered successfully";
-        header('Location: login.php');
-        exit;
-      } else {
-        $errors[] = "Registration failed (user may already exist)";
-      }
-
-      // in case if error
-
-    } catch (Throwable $e) {
-      $errors[] = "Service unavailable";
+    if ($username == "" || $password == "") {
+        echo "All fields required.";
+        exit();
     }
-  }
+
+    if (strlen($password) < 6) {
+        echo "Password must be at least 6 characters.";
+        exit();
+    }
+
+    if ($password != $confirm) {
+        echo "Passwords do not match.";
+        exit();
+    }
+
+    require_once('path.inc');
+    require_once('get_host_info.inc');
+    require_once('rabbitMQLib.inc');
+
+    $client = new rabbitMQClient("testRabbitMQ.ini", "testServer");
+
+    $request = array();
+    $request['type'] = "register";       
+    $request['username'] = $username;
+    $request['password'] = $password;
+
+    $response = $client->send_request($request);
+
+    if (is_array($response) && isset($response["status"])) {
+
+        if ($response["status"] === "ok") {
+            echo "Registration successful";
+            exit();
+        }
+
+        if ($response["status"] === "exists") {
+            echo "Username already exists.";
+            exit();
+        }
+    }
+
+    echo "Registration failed.";
+    exit();
 }
+
 ?>
 
-<!doctype html>
+<!DOCTYPE html>
 <html>
-<head><title>Register</title></head>
+<head>
+    <title>Register User</title>
+</head>
 <body>
 
 <h2>Register</h2>
 
-<?php if ($errors): ?>
-  <ul style="color:red;">
-    <?php foreach ($errors as $e): ?>
-      <li><?php echo $e; ?></li>
-    <?php endforeach; ?>
-  </ul>
-<?php endif; ?>
+<form method="POST">
+    Username:<br>
+    <input type="text" name="username"><br><br>
 
-<form method="post">
-  Username:<br>
-  <input type="text" name="username"><br><br>
+    Password (minimum 6):<br>
+    <input type="password" name="password"><br><br>
 
-  Password:<br>
-  <input type="password" name="password_1"><br><br>
+    Confirm Password:<br>
+    <input type="password" name="confirm"><br><br>
 
-  Confirm Password:<br>
-  <input type="password" name="password_2"><br><br>
-
-  <button type="submit" name="reg_user">Register</button>
+    <input type="submit" value="Register">
 </form>
+
+<br>
+<a href="index.html">Back to Login</a>
 
 </body>
 </html>
