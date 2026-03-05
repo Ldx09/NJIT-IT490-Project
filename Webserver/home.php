@@ -1,5 +1,4 @@
 <?php
-
 session_start();
 
 // session check
@@ -8,7 +7,7 @@ if (!isset($_SESSION["username"]) || !isset($_SESSION["session_key"])) {
     exit(0);
 }
 
-// RabbitMQ includes 
+// RabbitMQ includes
 require_once('path.inc');
 require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
@@ -37,6 +36,9 @@ if (!is_array($response) || !isset($response["status"]) || $response["status"] !
 <body>
 
 <h2>It works, Welcome <?php echo $_SESSION["username"]; ?></h2>
+
+<br><br>
+<a href="logout.php">Logout</a>
 
 </body>
 </html>
