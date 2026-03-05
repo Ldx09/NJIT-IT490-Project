@@ -182,3 +182,29 @@ if ($count > 0) {
 }
 
 }
+
+// Logout User
+function auth_logout($session_key)
+{
+    // if doesn't exist (obliviously)
+    if ($session_key === '') {
+        return ["status" => "error"];
+    }
+
+    $conn = auth_db();
+    if ($conn === null) {
+        return ["status" => "error"];
+    }
+
+    // delete session from DB
+    $stmt = $conn->prepare("DELETE FROM sessions WHERE session_key = ?");
+    if ($stmt === false) {
+        return ["status" => "error"];
+    }
+
+    $stmt->bind_param("s", $session_key);
+    $stmt->execute();
+    $stmt->close();
+
+    return ["status" => "ok"];
+}
