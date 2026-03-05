@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $client = new rabbitMQClient("testRabbitMQ.ini", "testServer");
 
     $request = array();
-    $request['type'] = "register";       
+    $request['type'] = "register";
     $request['username'] = $username;
     $request['password'] = $password;
 
@@ -51,6 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     echo "Registration failed.";
     exit();
 }
+
 
 ?>
 
