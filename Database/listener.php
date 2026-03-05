@@ -1,10 +1,12 @@
+#!/usr/bin/php
 <?php
+ // Listens for authentication requests
 
-require_once(__DIR__ . '/path.inc');
-require_once(__DIR__ . '/get_host_info.inc');
-require_once(__DIR__ . '/rabbitMQLib.inc');
+require_once('path.inc');
+require_once('get_host_info.inc');
+require_once('rabbitMQLib.inc');
 
-require_once(__DIR__ . '/auth_logic.php'); 
+require_once('auth_logic.php');
 
 function requestHandler($request)
 {
@@ -35,16 +37,24 @@ function requestHandler($request)
         return auth_validate_session($session_key);
     }
 
+    if ($type === "logout") {
+    $session_key = $request['session_key'] ?? '';
+    return auth_logout($session_key);
+}
+
+
     return ["status" => "error"];
 }
 
 // Start listener
-$iniFile   = __DIR__ . "/testRabbitMQ.ini";
-$serverKey = "testServer"; 
+$iniFile   = "testRabbitMQ.ini";
+$serverKey = "testServer";
 
 $server = new rabbitMQServer($iniFile, $serverKey);
 
 echo "Auth listener running...\n";
+echo "From INI: $iniFile\n";
+echo "From Server Key: $serverKey\n";
 echo "waiting for requests...\n";
 
 $server->process_requests('requestHandler');
