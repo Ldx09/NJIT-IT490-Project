@@ -1,0 +1,11 @@
+nhtsa_id,make,model,year,component,summary,recall_date
+26V129000,"General Motors, LLC",camry,26,V,"Engine Stall Due to Disabled Rear Fuel Pump",2026-03-05T17:00:33Z
+26V127000,"General Motors, LLC",camry,26,V,"Tire Sidewall Damage",2026-03-05T14:33:02Z
+26V124000,"Ford Motor Company",camry,26,V,"Rearview Camera Image May Not Display",2026-03-03T19:46:50Z
+26V123000,"Ford Motor Company",camry,26,V,"Incorrectly Displayed Rearview Camera Image/FMVSS 111",2026-03-03T19:46:07Z
+26V120000,"Ford Motor Company",camry,26,V,"Driver's Seat May Move Unexpectedly",2026-03-03T16:53:33Z
+26V119000,"Ford Motor Company",camry,26,V,"Driveshaft May Separate",2026-03-03T14:54:27Z
+26V118000,"Ford Motor Company",camry,26,V,"Backup Alarm Sound Failure",2026-03-03T13:41:07Z
+26V117000,"Ford Motor Company",camry,26,V,"Windshield Wipers May Fail",2026-03-03T13:05:02Z
+26V112000,"Honda (American Honda Motor Co.)",camry,26,V,"Instrument Panel and Rearview Camera Displays May Fail/FMVSS 101,111,305",2026-02-26T21:50:45Z
+26V111000,"International Motors, LLC",camry,26,V,"Brake Lines May Become Damaged and Leak",2026-02-26T20:07:51Z
