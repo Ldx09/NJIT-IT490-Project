@@ -24,10 +24,18 @@ if ($connection === null) {
     return ["status" => "error"];
 }
 // validating rules    
-if ($username===''|| strlen($password) < 6) {
-        return ["status"=> "error"];
-
-    }
+if (
+    $username === '' ||
+    strlen($password) < 6 ||
+    $vin === '' ||
+    $carMake === '' ||
+    $model === '' ||
+    $trim === '' ||
+    $color === '' ||
+    $year === ''
+) {
+    return ["status" => "error"];
+}
 // using prepared statements for security
 $stmt = $connection->prepare("SELECT COUNT(*) FROM users WHERE username = ?");
 $stmt->bind_param("s", $username);
@@ -196,4 +204,43 @@ $stmt->bind_param("s", $session_key);
 
 
 }
+
+
+function getUserVehicles($username)
+{
+    $connection = connectDB();
+    if ($connection === null) {
+        return ["status" => "error"];
+    }
+
+    $stmt = $connection->prepare("SELECT vehicles.id, vehicles.vin, vehicles.car_make, vehicles.model, vehicles.`trim`, vehicles.color, vehicles.year
+                                  FROM users
+                                  JOIN vehicles ON users.id = vehicles.user_id
+                                  WHERE users.username = ?
+                                  ORDER BY vehicles.id DESC");
+
+    if ($stmt === false) {
+        $connection->close();
+        return ["status" => "error"];
+    }
+
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = $row;
+    }
+
+    $stmt->close();
+    $connection->close();
+
+    return [
+        "status" => "ok",
+        "vehicles" => $rows
+    ];
+}
+
+
 

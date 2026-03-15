@@ -7,6 +7,7 @@ require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
 require_once('auth_logic.php'); 
+require_once('recall_logic.php');
 
 function requestHandler($request)
 {
@@ -51,10 +52,39 @@ function requestHandler($request)
     $session_key= $request['session_key'] ?? '';
     return auth_logout($session_key);
 }
-    
+
+if ($type==="INGEST_RECALL_BATCH") {
+    $batch= $request['batch']?? [];
+    return ingestRecall($batch);
+}
+
+if ($type === "getUserRecalls") {
+    $username = $request['username'] ?? '';
+    return getUserRecalls($username);
+}
+
+if ($type === "getAllRecalls") {
+    return getAllRecalls();
+}
+
+if ($type === "getUserVehicles") {
+    $username = $request['username'] ?? '';
+    return getUserVehicles($username);
+}
+
+if ($type === "markRecallComplete") {
+    $username = $request['username'] ?? '';
+    $vehicle_recall_id = $request['vehicle_recall_id'] ?? '';
+    return markRecallComplete($username, $vehicle_recall_id);
+}
 
     return ["status" => "error"];
+
+
+
 }
+
+
 
 // Start listener
 $iniFile= "testRabbitMQ.ini";
