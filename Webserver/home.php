@@ -50,6 +50,8 @@ if (!is_array($response) || !isset($response["status"]) || $response["status"] !
             <a class="btn" href="recall.php">My Recalls</a>
             <a class="btn" href="all_recalls.php">All Recalls</a>
             <a class="btn" href="logout.php">Logout</a>
+            <a class="btn" herf="appointments.php"> My appointments</a>
+            <a class="btn" href="help_me_fix.php">Help me fix it</a>
         </div>
     </div>
 
