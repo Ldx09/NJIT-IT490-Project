@@ -242,5 +242,26 @@ function getUserVehicles($username)
     ];
 }
 
+function get_user_id_by_session_key($session_key)
+{
+    if ($session_key === '') {
+        return null;
+    }
+    $connection = connectDB();
+    if ($connection === null) {
+        return null;
+    }
+    $stmt = $connection->prepare("SELECT user_id FROM sessions WHERE session_key = ?");
+    if ($stmt === false) {
+        return null;
+    }
+    $stmt->bind_param("s", $session_key);
+    $stmt->execute();
+    $stmt->bind_result($user_id);
+    $ok = $stmt->fetch();
+    $stmt->close();
+    return $ok ? (int)$user_id : null;
+}
+
 
 
