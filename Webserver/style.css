@@ -1,0 +1,167 @@
+body {
+    background: #0F172A;
+    color: #E2E8F0;
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+.container {
+    width: 92%;
+    max-width: 1100px;
+    margin: 36px auto;
+}
+
+.card {
+    background: #1E293B;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+}
+
+h1, h2, h3 {
+    color: #38BDF8;
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+}
+
+p {
+    color: #CBD5E1;
+    margin-top: 0;
+    margin-bottom: 14px;
+}
+
+a {
+    color: #38BDF8;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.nav-links {
+    margin-top: 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid #334155;
+}
+
+th {
+    background: #38BDF8;
+    color: #0F172A;
+    padding: 13px 14px;
+    text-align: left;
+    font-size: 15px;
+}
+
+td {
+    background: #1E293B;
+    color: #E2E8F0;
+    padding: 13px 14px;
+    border-bottom: 1px solid #334155;
+    font-size: 14px;
+}
+
+tr:last-child td {
+    border-bottom: none;
+}
+
+tr:hover td {
+    background: #233247;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 11px 12px;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    background: #0F172A;
+    color: #E2E8F0;
+    box-sizing: border-box;
+    margin-top: 6px;
+    margin-bottom: 16px;
+    outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #38BDF8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+}
+
+.empty-message {
+    color: #F59E0B;
+    font-weight: 600;
+}
+
+.success {
+    color: #22C55E;
+    font-weight: 700;
+}
+
+.warning {
+    color: #F59E0B;
+    font-weight: 700;
+}
+
+.danger {
+    color: #EF4444;
+    font-weight: 700;
+}
+
+.btn,
+button,
+input[type="submit"] {
+    display: inline-block;
+    background: #38BDF8;
+    color: #0F172A;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: none;
+    transition: 0.2s ease;
+}
+
+.btn:hover,
+button:hover,
+input[type="submit"]:hover {
+    opacity: 0.92;
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+.btn-danger {
+    background: #EF4444;
+    color: #FFFFFF;
+}
+
+.btn-success {
+    background: #22C55E;
+    color: #FFFFFF;
+}
+
+.btn-warning {
+    background: #F59E0B;
+    color: #0F172A;
+}
