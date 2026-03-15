@@ -147,6 +147,7 @@ class rabbitMQClient
 	private $routing_key = '*';
 	private $response_queue = array();
 	private $exchange_type = "topic";
+	private $auto_delete = false;
 
 	function __construct($machine, $server = "rabbitMQ")
 	{

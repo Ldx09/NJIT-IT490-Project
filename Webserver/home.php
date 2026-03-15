@@ -38,6 +38,8 @@ if (!is_array($response) || !isset($response["status"]) || $response["status"] !
 <h2>It works, Welcome <?php echo $_SESSION["username"]; ?></h2>
 
 <br><br>
+<a href="help_me_fix.php">Help me fix it</a><br>
+<a href="appointments.php">My appointments</a><br>
 <a href="logout.php">Logout</a>
 
 </body>

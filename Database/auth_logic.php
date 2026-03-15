@@ -1,10 +1,10 @@
 <?php
 
 // Database setting
-define('DB_HOST', 'localhost');
-define('DB_USER', 'testUser');
-define('DB_PASS', '12345');
-define('DB_NAME', 'testdb');
+define('DB_HOST', '10.246.134.211');
+define('DB_USER', 'admin');
+define('DB_PASS', '123456');
+define('DB_NAME', 'vehicleRecall');
 
 
 // Connect to MySQL
@@ -181,6 +181,27 @@ if ($count > 0) {
     return ["status" => "invalid"];
 }
 
+}
+
+function get_user_id_by_session_key($session_key)
+{
+    if ($session_key === '') {
+        return null;
+    }
+    $conn = auth_db();
+    if ($conn === null) {
+        return null;
+    }
+    $stmt = $conn->prepare("SELECT user_id FROM sessions WHERE session_key = ?");
+    if ($stmt === false) {
+        return null;
+    }
+    $stmt->bind_param("s", $session_key);
+    $stmt->execute();
+    $stmt->bind_result($user_id);
+    $ok = $stmt->fetch();
+    $stmt->close();
+    return $ok ? (int)$user_id : null;
 }
 
 // Logout User

@@ -7,6 +7,7 @@ require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
 require_once('auth_logic.php');
+require_once('appointment_logic.php');
 
 function requestHandler($request)
 {
@@ -38,10 +39,31 @@ function requestHandler($request)
     }
 
     if ($type === "logout") {
-    $session_key = $request['session_key'] ?? '';
-    return auth_logout($session_key);
-}
+        $session_key = $request['session_key'] ?? '';
+        return auth_logout($session_key);
+    }
 
+    if ($type === "ADD_APPOINTMENT") {
+        $session_key = $request['session_key'] ?? '';
+        $user_id = get_user_id_by_session_key($session_key);
+        if ($user_id === null) {
+            return ["status" => "error"];
+        }
+        $appointment_at = $request['appointment_at'] ?? '';
+        $title = $request['title'] ?? '';
+        $appointment_type = $request['appointment_type'] ?? 'virtual';
+        $location_or_link = $request['location_or_link'] ?? '';
+        return appointment_create($user_id, $appointment_at, $title, $appointment_type, $location_or_link);
+    }
+
+    if ($type === "GET_APPOINTMENTS") {
+        $session_key = $request['session_key'] ?? '';
+        $user_id = get_user_id_by_session_key($session_key);
+        if ($user_id === null) {
+            return ["status" => "ok", "appointments" => []];
+        }
+        return appointment_list($user_id);
+    }
 
     return ["status" => "error"];
 }
