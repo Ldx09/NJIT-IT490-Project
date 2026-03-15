@@ -1,11 +1,4 @@
 <?php
-// ============================================================
-//  D6 — Email Sender (PHPMailer)
-//  Provides:
-//    send_email()           — sends any HTML email
-//    build_recall_email()   — builds recall alert HTML
-//    build_reminder_email() — builds appointment reminder HTML
-// ============================================================
 
 require_once __DIR__ . '/notify_config.php';
 require_once __DIR__ . '/notify_logger.php';
@@ -91,7 +84,7 @@ function build_recall_email(array $user, array $car, array $recall): string {
         </table>
         <div style="margin-top:24px;">
           <a href="http://auth.com/fix_it.php?recall_id={$nhtsa_id}"
-             style="background:#c0392b;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
+            style="background:#c0392b;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
             Find a Repair Shop
           </a>
         </div>
@@ -149,7 +142,7 @@ function build_reminder_email(array $user, array $appt): string {
         {$link_html}
         <p style="margin-top:24px;">
           <a href="http://auth.com/schedule.php"
-             style="background:#2980b9;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
+            style="background:#2980b9;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none;display:inline-block;">
             View My Schedule
           </a>
         </p>

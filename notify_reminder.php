@@ -1,22 +1,17 @@
 <?php
-// ============================================================
-//  D6 — Appointment Reminder (Cron Job)
-//
-//  TWO MODES:
-//  1. STANDALONE TEST (mock data, no DB):
-//       php notify_reminder.php
-//
-//  2. CRON (runs automatically every hour on Ubuntu):
-//       crontab -e
-//       Add: 0 * * * * /usr/bin/php /var/www/html/D6_Notifications/notify_reminder.php
-// ============================================================
 
 require_once __DIR__ . '/notify_logger.php';
 require_once __DIR__ . '/notify_mailer.php';
 require_once __DIR__ . '/notify_sms.php';
 
+// Load RabbitMQ client from teammate's files
+$rabbitMQLib = __DIR__ . '/../Database/rabbitMQLib.inc';
+if (file_exists($rabbitMQLib)) {
+    require_once $rabbitMQLib;
+}
+
 // ------------------------------------------------------------
-//  Get appointments happening in the next 24 hours
+//  Get upcoming appointments via RabbitMQ
 // ------------------------------------------------------------
 function get_upcoming_appointments(bool $use_mock = true): array {
 
@@ -28,8 +23,8 @@ function get_upcoming_appointments(bool $use_mock = true): array {
                 'id'            => 101,
                 'user_id'       => 1,
                 'username'      => 'JohnDoe',
-                'email'         => 'test@example.com',  // ← change to YOUR email to test
-                'phone'         => '+12015551234',
+                'email'         => 'ldx9651@gmail.com',  // ← put YOUR email to test
+                'phone'         => '+18882827892',
                 'notify_email'  => 1,
                 'notify_sms'    => 0,
                 'shop_name'     => 'Toyota of Newark',
@@ -43,8 +38,8 @@ function get_upcoming_appointments(bool $use_mock = true): array {
                 'id'            => 102,
                 'user_id'       => 2,
                 'username'      => 'JaneSmith',
-                'email'         => 'test2@example.com',
-                'phone'         => '+19735559876',
+                'email'         => 'ldx9651@gmail.com',
+                'phone'         => '+18882827892',
                 'notify_email'  => 1,
                 'notify_sms'    => 1,
                 'shop_name'     => 'AutoCare Virtual',
@@ -57,58 +52,43 @@ function get_upcoming_appointments(bool $use_mock = true): array {
         ];
     }
 
-    // ---- REAL DB MODE --------------------------------------
+    // ---- REAL MODE via RabbitMQ ----------------------------
     try {
-        require_once __DIR__ . '/../Database/db.php';
-        $pdo = get_db_connection();
+        $client   = new rabbitMQClient("testRabbitMQ.ini", "testServer");
+        $response = $client->send_request([
+            'type' => 'GET_UPCOMING_APPOINTMENTS'
+        ]);
 
-        $stmt = $pdo->prepare("
-            SELECT
-                a.id,
-                a.user_id,
-                u.username,
-                u.email,
-                u.phone,
-                u.notify_email,
-                u.notify_sms,
-                a.shop_name,
-                a.shop_address,
-                a.appt_type,
-                a.appt_datetime,
-                a.meeting_link,
-                a.reminder_sent
-            FROM appointments a
-            JOIN users u ON u.id = a.user_id
-            WHERE
-                a.status         = 'upcoming'
-            AND a.reminder_sent  = 0
-            AND a.appt_datetime  BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL 24 HOUR)
-            AND (u.notify_email = 1 OR u.notify_sms = 1)
-        ");
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        if (!isset($response['status']) || $response['status'] !== 'ok') {
+            notify_log("RabbitMQ error getting appointments: " . json_encode($response));
+            return [];
+        }
+
+        return $response['appointments'] ?? [];
 
     } catch (Exception $e) {
-        notify_log("DB ERROR (get_upcoming_appointments): " . $e->getMessage());
+        notify_log("RabbitMQ ERROR (get_upcoming_appointments): " . $e->getMessage());
         return [];
     }
 }
 
 // ------------------------------------------------------------
-//  Mark appointment reminder as sent (prevents duplicate sends)
+//  Mark reminder sent via RabbitMQ
 // ------------------------------------------------------------
 function mark_reminder_sent(int $appt_id, bool $use_mock = true): void {
     if ($use_mock) {
         notify_log("MOCK: marked appointment #{$appt_id} reminder_sent = 1");
         return;
     }
+
     try {
-        require_once __DIR__ . '/../Database/db.php';
-        $pdo  = get_db_connection();
-        $stmt = $pdo->prepare("UPDATE appointments SET reminder_sent = 1 WHERE id = ?");
-        $stmt->execute([$appt_id]);
+        $client = new rabbitMQClient("testRabbitMQ.ini", "testServer");
+        $client->send_request([
+            'type'    => 'MARK_REMINDER_SENT',
+            'appt_id' => $appt_id
+        ]);
     } catch (Exception $e) {
-        notify_log("DB ERROR (mark_reminder_sent): " . $e->getMessage());
+        notify_log("RabbitMQ ERROR (mark_reminder_sent): " . $e->getMessage());
     }
 }
 
@@ -161,10 +141,10 @@ function send_appointment_reminders(bool $use_mock = true): void {
 }
 
 // ------------------------------------------------------------
-//  STANDALONE TEST — run directly: php notify_reminder.php
+//  STANDALONE TEST: php notify_reminder.php
 // ------------------------------------------------------------
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     echo "\n=== D6 Test: notify_reminder.php (mock mode) ===\n\n";
     send_appointment_reminders(use_mock: true);
-    echo "\nCheck logs/notifications.log to see results.\n\n";
+    echo "\nCheck logs/notifications.log for results.\n\n";
 }

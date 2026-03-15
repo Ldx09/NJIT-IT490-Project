@@ -49,7 +49,7 @@ function build_recall_sms(array $car, array $recall): string {
     $component = $recall['component'];
     $id        = $recall['nhtsa_id'];
     return "RECALL ALERT: Your {$car_str} has an active recall ({$component}). "
-         . "Log in to auth.com to find a repair shop. NHTSA: {$id}";
+        . "Log in to auth.com to find a repair shop. NHTSA: {$id}";
 }
 
 // ------------------------------------------------------------
@@ -60,5 +60,5 @@ function build_reminder_sms(array $appt): string {
     $dt   = date('M j \a\t g:i A', strtotime($appt['appt_datetime']));
     $type = $appt['appt_type'] === 'virtual' ? 'virtual' : 'in-person';
     return "REMINDER: Your {$type} appt at {$shop} is tomorrow ({$dt}). "
-         . "Details: auth.com/schedule.php";
+        . "Details: auth.com/schedule.php";
 }

@@ -1,9 +1,4 @@
 <?php
-// ============================================================
-//  D6 — Logger
-//  Writes timestamped lines to logs/notifications.log
-//  and echoes to console when running via CLI.
-// ============================================================
 
 require_once __DIR__ . '/notify_config.php';
 
