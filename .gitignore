@@ -14,4 +14,4 @@ Thumbs.db
 # IDE files
 .vscode/
 .idea/
-*.swp
+*.swptestRabbitMQ.ini
