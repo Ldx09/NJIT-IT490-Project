@@ -1,7 +1,7 @@
 <?php
 
-// Database setting
-define('DB_HOST', '10.246.134.211');
+// Database setting (set DB_HOST=127.0.0.1 when running listener on same machine as MySQL)
+define('DB_HOST', getenv('DB_HOST') ?: '10.246.134.211');
 define('DB_USER', 'admin');
 define('DB_PASS', '123456');
 define('DB_NAME', 'vehicleRecall');

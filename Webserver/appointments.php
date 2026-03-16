@@ -1,5 +1,6 @@
 <?php
 session_start();
+set_time_limit(20);
 // only logged-in users get recall/appointment schedule
 if (!isset($_SESSION["username"]) || !isset($_SESSION["session_key"])) {
     header("Location: index.html");
@@ -11,7 +12,13 @@ require_once('rabbitMQLib.inc');
 
 $appointmentQueue = new rabbitMQClient("testRabbitMQ.ini", "testServer");
 $sessionCheckPayload = array('type' => 'validate_session', 'session_key' => $_SESSION["session_key"]);
-$sessionCheckResult = $appointmentQueue->send_request($sessionCheckPayload);
+try {
+    $sessionCheckResult = $appointmentQueue->send_request($sessionCheckPayload);
+} catch (Exception $e) {
+    session_destroy();
+    header("Location: index.html?error=unavailable");
+    exit(0);
+}
 if (!is_array($sessionCheckResult) || !isset($sessionCheckResult["status"]) || $sessionCheckResult["status"] !== "ok") {
     session_destroy();
     header("Location: index.html");
@@ -32,7 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["appointment_at"], $_P
             'appointment_type' => $_POST["appointment_type"] ?? 'virtual',
             'location_or_link' => isset($_POST["location_or_link"]) ? trim((string) $_POST["location_or_link"]) : ''
         );
-        $addResult = $appointmentQueue->send_request($addPayload);
+        try {
+            $addResult = $appointmentQueue->send_request($addPayload);
+        } catch (Exception $e) {
+            $addResult = null;
+        }
         if (is_array($addResult) && isset($addResult["status"]) && $addResult["status"] === "ok") {
             $appointmentFeedback = 'Appointment added.';
         } else {
@@ -44,7 +55,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["appointment_at"], $_P
 
 // fetch upcoming so we don't show past recall appointments
 $listPayload = array('type' => 'GET_APPOINTMENTS', 'session_key' => $_SESSION["session_key"]);
-$listResult = $appointmentQueue->send_request($listPayload);
+try {
+    $listResult = $appointmentQueue->send_request($listPayload);
+} catch (Exception $e) {
+    $listResult = null;
+}
 $upcomingRecallAppointments = [];
 $listLoadError = '';
 if (!is_array($listResult)) {

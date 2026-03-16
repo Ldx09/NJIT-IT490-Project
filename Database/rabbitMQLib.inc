@@ -82,8 +82,32 @@ class rabbitMQServer
 		}
 		catch(Exception $e)
 		{
-			// ampq throws exception if get fails...
-            echo "error: rabbitMQServer: process_message: exception caught: ".$e;
+			echo "error: rabbitMQServer: process_message: exception caught: ".$e;
+			// if client is waiting for a reply, send error so it doesn't hang
+			if ($msg->getReplyTo()) {
+				try {
+					$params = array(
+						'host' => $this->BROKER_HOST,
+						'port' => $this->BROKER_PORT,
+						'login' => $this->USER,
+						'password' => $this->PASSWORD,
+						'vhost' => $this->VHOST
+					);
+					$conn = new AMQPConnection($params);
+					$conn->connect();
+					$channel = new AMQPChannel($conn);
+					$exchange = new AMQPExchange($channel);
+					$exchange->setName($this->exchange);
+					$exchange->setType($this->exchange_type);
+					$conn_queue = new AMQPQueue($channel);
+					$conn_queue->setName($msg->getReplyTo());
+					$replykey = $this->routing_key.".response";
+					$conn_queue->bind($exchange->getName(), $replykey);
+					$exchange->publish(json_encode(["status" => "error"]), $replykey, AMQP_NOPARAM, array('correlation_id' => $msg->getCorrelationId()));
+				} catch (Exception $e2) {
+					echo " failed to send error reply: ".$e2;
+				}
+			}
 		}
 		// message does not require a response, send ack immediately
 		$body = $msg->getBody();
