@@ -69,9 +69,25 @@ $user_id= $connection->insert_id;
 $stmt= $connection->prepare("INSERT INTO vehicles 
 (user_id, vin, car_make, model, trim, color, year)
  VALUES (?, ?, ?, ?, ?, ?, ?)");
- $stmt->bind_param("isssssi", $user_id, $vin, $carMake,$model, $trim, $color, $year);
- $ok= $stmt->execute();
- $stmt->close();
+$stmt->bind_param("isssssi", $user_id, $vin, $carMake, $model, $trim, $color, $year);
+$ok = $stmt->execute();
+
+if (!$ok) {
+$stmt->close();
+$connection->close();
+return ["status" => "error"];
+}
+
+//get vehicle id to match for recalls
+$vehicle_id = $connection->insert_id;
+$stmt->close();
+$connection->close();
+
+// matches new vehicle for recalls 
+
+matchVehicleRecalls($vehicle_id, $carMake, $model, (int)$year);
+return["status"=>"ok"];
+
 
  if ($ok){
 
@@ -262,6 +278,7 @@ function get_user_id_by_session_key($session_key)
     $stmt->close();
     return $ok ? (int)$user_id : null;
 }
+
 
 
 

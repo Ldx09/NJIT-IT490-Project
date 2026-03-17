@@ -222,3 +222,66 @@ function markRecallComplete($username, $vehicle_recall_id)
         return ["status" => "error"];
     }
 }
+
+function matchVehicleRecalls($vehicle_id, $car_make, $model, $year)
+{
+    $connection = connectDB();
+    if ($connection === null) {
+        return ["status" => "error"];
+    }
+
+    // matches for current recalls to user vehicle
+    $stmt = $connection->prepare("
+        SELECT id
+        FROM recalls
+        WHERE make = ? AND model = ? AND year = ?
+    ");
+
+    if ($stmt === false) {
+        $connection->close();
+        return ["status" => "error"];
+    }
+
+    $stmt->bind_param("ssi", $car_make, $model, $year);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    while ($recall = $result->fetch_assoc()) {
+        $recall_id = $recall["id"];
+
+        // do not add duplicates
+        $check = $connection->prepare("
+            SELECT id
+            FROM vehicle_recalls
+            WHERE vehicle_id = ? AND recall_id = ?
+        ");
+
+        if ($check === false) {
+            continue;
+        }
+
+        $check->bind_param("ii", $vehicle_id, $recall_id);
+        $check->execute();
+        $checkResult = $check->get_result();
+
+        if ($checkResult->num_rows == 0) {
+            $insert = $connection->prepare("
+                INSERT INTO vehicle_recalls (vehicle_id, recall_id, status)
+                VALUES (?, ?, 'open')
+            ");
+
+            if ($insert !== false) {
+                $insert->bind_param("ii", $vehicle_id, $recall_id);
+                $insert->execute();
+                $insert->close();
+            }
+        }
+
+        $check->close();
+    }
+
+    $stmt->close();
+    $connection->close();
+
+    return ["status" => "ok"];
+}
