@@ -26,9 +26,9 @@ if (!$pushOnly) {
             $seen[$id] = true;
             $rows[] = [
                 'nhtsa_id' => $id,
-                'make' => $r['manufacturerName'] ?? $v[0],
+                'make' => $v[0],
                 'model' => $v[1],
-                'year' => (string)($r['issueYear'] ?? $v[2]),
+                 'year' => (int)$v[2],
                 'component' => $r['typeCode'] ?? '',
                 'summary' => $r['subject'] ?? $r['consequence'] ?? '',
                 'recall_date' => $r['recall573ReceivedDate'] ?? $r['createDate'] ?? ''
@@ -55,8 +55,10 @@ if (!$pushOnly) {
 
 if (empty($rows)) { echo "nothing to push\n"; exit(0); }
 
-require_once $root . '/../Webserver/get_host_info.inc';
-require_once $root . '/../Webserver/rabbitMQLib.inc';
+require_once $root . '/path.inc';
+require_once $root . '/get_host_info.inc';
+require_once $root . '/rabbitMQLib.inc';
+
 chdir(realpath(dirname($ini)) ?: $root);
 $client = new rabbitMQClient($ini, 'testServer');
 foreach (array_chunk($rows, 500) as $batch) $client->publish(['type' => 'INGEST_RECALL_BATCH', 'batch' => $batch]);
