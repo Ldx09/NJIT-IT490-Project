@@ -4,18 +4,13 @@ require_once __DIR__ . '/notify_logger.php';
 require_once __DIR__ . '/notify_mailer.php';
 require_once __DIR__ . '/notify_sms.php';
 
-// Load RabbitMQ client from teammate's files
 $rabbitMQLib = __DIR__ . '/../Database/rabbitMQLib.inc';
 if (file_exists($rabbitMQLib)) {
     require_once $rabbitMQLib;
 }
 
-// ------------------------------------------------------------
-//  Get affected users via RabbitMQ
-// ------------------------------------------------------------
 function get_users_affected_by_recall(array $recall, bool $use_mock = true): array {
 
-    // ---- MOCK MODE (no RabbitMQ needed) --------------------
     if ($use_mock) {
         return [
             [
@@ -45,7 +40,6 @@ function get_users_affected_by_recall(array $recall, bool $use_mock = true): arr
         ];
     }
 
-    // ---- REAL MODE via RabbitMQ ----------------------------
     try {
         $client   = new rabbitMQClient("testRabbitMQ.ini", "testServer");
         $response = $client->send_request([
@@ -67,9 +61,6 @@ function get_users_affected_by_recall(array $recall, bool $use_mock = true): arr
     }
 }
 
-// ------------------------------------------------------------
-//  Main function — notify all affected users
-// ------------------------------------------------------------
 function notify_users_of_recall(array $recall, bool $use_mock = true): void {
     notify_log("=== Recall notification: {$recall['make']} {$recall['model']} [{$recall['nhtsa_id']}]");
 
@@ -90,14 +81,12 @@ function notify_users_of_recall(array $recall, bool $use_mock = true): void {
             'color' => $user['car_color']
         ];
 
-        // Email
         if (!empty($user['notify_email']) && !empty($user['email'])) {
             $subject = "Recall Alert: Your {$car['year']} {$car['make']} {$car['model']}";
             $body    = build_recall_email($user, $car, $recall);
             send_email($user['email'], $user['username'], $subject, $body);
         }
 
-        // SMS
         if (!empty($user['notify_sms']) && !empty($user['phone'])) {
             $msg = build_recall_sms($car, $recall);
             send_sms($user['phone'], $msg);
@@ -107,9 +96,6 @@ function notify_users_of_recall(array $recall, bool $use_mock = true): void {
     notify_log("=== Done: recall notification [{$recall['nhtsa_id']}]");
 }
 
-// ------------------------------------------------------------
-//  STANDALONE TEST: php notify_recall.php
-// ------------------------------------------------------------
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     echo "\n=== D6 Test: notify_recall.php (mock mode) ===\n\n";
 
