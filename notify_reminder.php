@@ -4,18 +4,13 @@ require_once __DIR__ . '/notify_logger.php';
 require_once __DIR__ . '/notify_mailer.php';
 require_once __DIR__ . '/notify_sms.php';
 
-// Load RabbitMQ client from teammate's files
 $rabbitMQLib = __DIR__ . '/../Database/rabbitMQLib.inc';
 if (file_exists($rabbitMQLib)) {
     require_once $rabbitMQLib;
 }
 
-// ------------------------------------------------------------
-//  Get upcoming appointments via RabbitMQ
-// ------------------------------------------------------------
 function get_upcoming_appointments(bool $use_mock = true): array {
 
-    // ---- MOCK MODE -----------------------------------------
     if ($use_mock) {
         $tomorrow = (new DateTime())->modify('+23 hours')->format('Y-m-d H:i:s');
         return [
@@ -52,7 +47,6 @@ function get_upcoming_appointments(bool $use_mock = true): array {
         ];
     }
 
-    // ---- REAL MODE via RabbitMQ ----------------------------
     try {
         $client   = new rabbitMQClient("testRabbitMQ.ini", "testServer");
         $response = $client->send_request([
@@ -72,9 +66,6 @@ function get_upcoming_appointments(bool $use_mock = true): array {
     }
 }
 
-// ------------------------------------------------------------
-//  Mark reminder sent via RabbitMQ
-// ------------------------------------------------------------
 function mark_reminder_sent(int $appt_id, bool $use_mock = true): void {
     if ($use_mock) {
         notify_log("MOCK: marked appointment #{$appt_id} reminder_sent = 1");
@@ -92,9 +83,6 @@ function mark_reminder_sent(int $appt_id, bool $use_mock = true): void {
     }
 }
 
-// ------------------------------------------------------------
-//  Main function — send all due reminders
-// ------------------------------------------------------------
 function send_appointment_reminders(bool $use_mock = true): void {
     notify_log("=== Appointment reminder job started");
 
@@ -118,20 +106,19 @@ function send_appointment_reminders(bool $use_mock = true): void {
 
         $sent = false;
 
-        // Email
+        
         if (!empty($appt['notify_email']) && !empty($appt['email'])) {
             $subject = "Reminder: Your appointment at {$appt['shop_name']} is tomorrow";
             $body    = build_reminder_email($user, $appt);
             $sent    = send_email($appt['email'], $appt['username'], $subject, $body);
         }
 
-        // SMS
+        
         if (!empty($appt['notify_sms']) && !empty($appt['phone'])) {
             $msg  = build_reminder_sms($appt);
             $sent = send_sms($appt['phone'], $msg) || $sent;
         }
 
-        // Mark sent so cron doesn't fire again
         if ($sent) {
             mark_reminder_sent((int)$appt['id'], $use_mock);
         }
@@ -140,9 +127,6 @@ function send_appointment_reminders(bool $use_mock = true): void {
     notify_log("=== Appointment reminder job complete");
 }
 
-// ------------------------------------------------------------
-//  STANDALONE TEST: php notify_reminder.php
-// ------------------------------------------------------------
 if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     echo "\n=== D6 Test: notify_reminder.php (mock mode) ===\n\n";
     send_appointment_reminders(use_mock: true);
