@@ -1,11 +1,4 @@
 <?php
-// ============================================================
-//  D6 — SMS Sender (Twilio)
-//  Provides:
-//    send_sms()          — sends any SMS
-//    build_recall_sms()  — builds recall alert text
-//    build_reminder_sms()— builds appointment reminder text
-// ============================================================
 
 require_once __DIR__ . '/notify_config.php';
 require_once __DIR__ . '/notify_logger.php';
@@ -13,9 +6,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use Twilio\Rest\Client;
 
-// ------------------------------------------------------------
-//  Core send function
-// ------------------------------------------------------------
 function send_sms(string $to_phone, string $message): bool {
     if (empty($to_phone)) {
         notify_log("SMS SKIPPED — no phone number");
@@ -41,9 +31,6 @@ function send_sms(string $to_phone, string $message): bool {
     }
 }
 
-// ------------------------------------------------------------
-//  SMS text: Recall Alert (keep under 160 chars)
-// ------------------------------------------------------------
 function build_recall_sms(array $car, array $recall): string {
     $car_str   = "{$car['year']} {$car['make']} {$car['model']}";
     $component = $recall['component'];
@@ -52,9 +39,6 @@ function build_recall_sms(array $car, array $recall): string {
         . "Log in to auth.com to find a repair shop. NHTSA: {$id}";
 }
 
-// ------------------------------------------------------------
-//  SMS text: Appointment Reminder
-// ------------------------------------------------------------
 function build_reminder_sms(array $appt): string {
     $shop = $appt['shop_name'];
     $dt   = date('M j \a\t g:i A', strtotime($appt['appt_datetime']));
