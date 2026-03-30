@@ -7,9 +7,6 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-// ------------------------------------------------------------
-//  Core send function
-// ------------------------------------------------------------
 function send_email(string $to_email, string $to_name, string $subject, string $body_html): bool {
     if (!NOTIFY_EMAIL_ENABLED) {
         notify_log("EMAIL (disabled) → {$to_email} | {$subject}");
@@ -44,9 +41,6 @@ function send_email(string $to_email, string $to_name, string $subject, string $
     }
 }
 
-// ------------------------------------------------------------
-//  HTML template: Recall Alert
-// ------------------------------------------------------------
 function build_recall_email(array $user, array $car, array $recall): string {
     $name      = htmlspecialchars($user['username']);
     $car_str   = htmlspecialchars("{$car['year']} {$car['make']} {$car['model']}");
@@ -96,9 +90,6 @@ function build_recall_email(array $user, array $car, array $recall): string {
     HTML;
 }
 
-// ------------------------------------------------------------
-//  HTML template: Appointment Reminder
-// ------------------------------------------------------------
 function build_reminder_email(array $user, array $appt): string {
     $name      = htmlspecialchars($user['username']);
     $shop      = htmlspecialchars($appt['shop_name']);
