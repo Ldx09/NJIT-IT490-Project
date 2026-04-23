@@ -1,24 +1,43 @@
 #!/bin/bash
 
-if [ -z "$1" ]; then
-    echo "Usage: ./build_bundle.sh <version_number>"
+FRONTEND_VM_USER="ubuntu"
+FRONTEND_VM_IP="FRONTEND_VM_IP_HERE"
+FRONTEND_VM_PATH="/var/www/html"
+
+BACKEND_VM_USER="ubuntu"
+BACKEND_VM_IP="BACKEND_VM_IP_HERE"
+BACKEND_VM_PATH="/var/www/html"
+
+DEPLOY_VM_USER="ubuntu"
+DEPLOY_VM_IP="DEPLOY_VM_IP_HERE"
+DEPLOY_VM_PATH="/srv/deploy/bundles"
+
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+VERSION="v${TIMESTAMP}"
+BUNDLE_NAME="it490_${VERSION}.tgz"
+STAGING_DIR="/tmp/it490_staging_${VERSION}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+BUILDS_DIR="${SCRIPT_DIR}/builds"
+MANIFESTS_DIR="${SCRIPT_DIR}/manifests"
+
+mkdir -p "$STAGING_DIR/frontend"
+mkdir -p "$STAGING_DIR/backend"
+mkdir -p "$BUILDS_DIR"
+mkdir -p "$MANIFESTS_DIR"
+
+echo "Pulling files from frontend VM..."
+scp -r ${FRONTEND_VM_USER}@${FRONTEND_VM_IP}:${FRONTEND_VM_PATH}/. "$STAGING_DIR/frontend/"
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to pull files from frontend VM."
     exit 1
 fi
 
-VERSION="$1"
-BUNDLE_NAME="it490_v${VERSION}.tgz"
-STAGING_DIR="/tmp/it490_staging_v${VERSION}"
-APP_SRC="$(cd "$(dirname "$0")/app-src" && pwd)"
-BUILDS_DIR="$(cd "$(dirname "$0")/builds" && pwd)"
-MANIFESTS_DIR="$(cd "$(dirname "$0")/manifests" && pwd)"
-DEPLOY_VM_DIR="/srv/deploy/bundles"
-
-rm -rf "$STAGING_DIR"
-mkdir -p "$STAGING_DIR/frontend"
-mkdir -p "$STAGING_DIR/backend"
-
-cp -r "$APP_SRC/frontend/." "$STAGING_DIR/frontend/"
-cp -r "$APP_SRC/backend/." "$STAGING_DIR/backend/"
+echo "Pulling files from backend VM..."
+scp -r ${BACKEND_VM_USER}@${BACKEND_VM_IP}:${BACKEND_VM_PATH}/. "$STAGING_DIR/backend/"
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to pull files from backend VM."
+    exit 1
+fi
 
 cat > "$STAGING_DIR/manifest.json" <<EOF
 {
@@ -49,10 +68,10 @@ cat > "$STAGING_DIR/manifest.json" <<EOF
 }
 EOF
 
-cp "$STAGING_DIR/manifest.json" "$MANIFESTS_DIR/manifest_v${VERSION}.json"
+cp "$STAGING_DIR/manifest.json" "$MANIFESTS_DIR/manifest_${VERSION}.json"
 
 cd /tmp
-tar -czf "$BUILDS_DIR/$BUNDLE_NAME" "it490_staging_v${VERSION}"
+tar -czf "$BUILDS_DIR/$BUNDLE_NAME" "it490_staging_${VERSION}"
 
 echo "Verifying bundle..."
 tar -tzf "$BUILDS_DIR/$BUNDLE_NAME" > /dev/null 2>&1
@@ -61,14 +80,21 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-if [ -d "$DEPLOY_VM_DIR" ]; then
-    cp "$BUILDS_DIR/$BUNDLE_NAME" "$DEPLOY_VM_DIR/"
-    cp "$MANIFESTS_DIR/manifest_v${VERSION}.json" "$DEPLOY_VM_DIR/"
-    echo "Bundle and manifest copied to Deploy VM at $DEPLOY_VM_DIR"
-else
-    echo "WARNING: Deploy VM directory $DEPLOY_VM_DIR not found. Bundle saved locally to $BUILDS_DIR"
+echo "Pushing bundle to Deploy VM..."
+scp "$BUILDS_DIR/$BUNDLE_NAME" ${DEPLOY_VM_USER}@${DEPLOY_VM_IP}:${DEPLOY_VM_PATH}/
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to push bundle to Deploy VM."
+    exit 1
+fi
+
+scp "$MANIFESTS_DIR/manifest_${VERSION}.json" ${DEPLOY_VM_USER}@${DEPLOY_VM_IP}:${DEPLOY_VM_PATH}/
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to push manifest to Deploy VM."
+    exit 1
 fi
 
 rm -rf "$STAGING_DIR"
 
 echo "Build complete: $BUNDLE_NAME"
+echo "Version: $VERSION"
+echo "Bundle pushed to Deploy VM at ${DEPLOY_VM_IP}:${DEPLOY_VM_PATH}"
