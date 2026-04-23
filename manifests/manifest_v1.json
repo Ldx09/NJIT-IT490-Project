@@ -1,0 +1,26 @@
+{
+    "version": "1",
+    "bundle_name": "it490_v1.tgz",
+    "targets": [
+        {
+            "role": "frontend",
+            "files": [
+                {
+                    "source": "frontend/index.html",
+                    "destination": "/var/www/html/index.html"
+                }
+            ],
+            "service_restart": "apache2"
+        },
+        {
+            "role": "backend",
+            "files": [
+                {
+                    "source": "backend/api.php",
+                    "destination": "/var/www/html/api.php"
+                }
+            ],
+            "service_restart": "apache2"
+        }
+    ]
+}
