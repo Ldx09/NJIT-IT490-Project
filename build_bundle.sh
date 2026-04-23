@@ -8,6 +8,10 @@ BACKEND_VM_USER="ubuntu"
 BACKEND_VM_IP="BACKEND_VM_IP_HERE"
 BACKEND_VM_PATH="/var/www/html"
 
+DMZ_VM_USER="ubuntu"
+DMZ_VM_IP="10.246.134.18"
+DMZ_VM_PATH="/etc/dmz"
+
 DEPLOY_VM_USER="ubuntu"
 DEPLOY_VM_IP="DEPLOY_VM_IP_HERE"
 DEPLOY_VM_PATH="/srv/deploy/bundles"
@@ -22,6 +26,7 @@ MANIFESTS_DIR="${SCRIPT_DIR}/manifests"
 
 mkdir -p "$STAGING_DIR/frontend"
 mkdir -p "$STAGING_DIR/backend"
+mkdir -p "$STAGING_DIR/dmz"
 mkdir -p "$BUILDS_DIR"
 mkdir -p "$MANIFESTS_DIR"
 
@@ -36,6 +41,13 @@ echo "Pulling files from backend VM..."
 scp -r ${BACKEND_VM_USER}@${BACKEND_VM_IP}:${BACKEND_VM_PATH}/. "$STAGING_DIR/backend/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to pull files from backend VM."
+    exit 1
+fi
+
+echo "Pulling files from DMZ VM..."
+scp -r ${DMZ_VM_USER}@${DMZ_VM_IP}:${DMZ_VM_PATH}/. "$STAGING_DIR/dmz/"
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to pull files from DMZ VM."
     exit 1
 fi
 
@@ -63,6 +75,16 @@ cat > "$STAGING_DIR/manifest.json" <<EOF
                 }
             ],
             "service_restart": "apache2"
+        },
+        {
+            "role": "dmz",
+            "files": [
+                {
+                    "source": "dmz/",
+                    "destination": "/etc/dmz/"
+                }
+            ],
+            "service_restart": "nginx"
         }
     ]
 }
