@@ -1,19 +1,18 @@
 #!/bin/bash
 
-FRONTEND_VM_USER="mortal"
-# change
+FRONTEND_VM_USER="ubuntu"
 FRONTEND_VM_IP="10.246.134.189"
-FRONTEND_VM_PATH="/var/www/sample"
+FRONTEND_VM_PATH="/var/www/html"
 
-BACKEND_VM_USER="mortal"
+BACKEND_VM_USER="ubuntu"
 BACKEND_VM_IP="10.246.134.189"
-BACKEND_VM_PATH="/home/mortal/it490/database"
+BACKEND_VM_PATH="/var/www/html"
 
-DMZ_VM_USER="mortal"
+DMZ_VM_USER="ubuntu"
 DMZ_VM_IP="10.246.134.189"
-DMZ_VM_PATH="/home/mortal/it490/DMZ"
+DMZ_VM_PATH="/etc/dmz"
 
-DEPLOY_VM_USER="mortal"
+DEPLOY_VM_USER="ubuntu"
 DEPLOY_VM_IP="10.246.134.46"
 DEPLOY_VM_PATH="/srv/deploy/bundles"
 
@@ -38,6 +37,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+rm -f "$STAGING_DIR/frontend/testRabbitMQ.ini"
+rm -f "$STAGING_DIR/frontend/rabbitMQLib.inc"
+rm -f "$STAGING_DIR/frontend/host.ini"
+rm -f "$STAGING_DIR/frontend/path.inc"
+rm -f "$STAGING_DIR/frontend/get_host_info.inc"
+
 echo "Pulling files from backend VM..."
 scp -r ${BACKEND_VM_USER}@${BACKEND_VM_IP}:${BACKEND_VM_PATH}/. "$STAGING_DIR/backend/"
 if [ $? -ne 0 ]; then
@@ -45,12 +50,24 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+rm -f "$STAGING_DIR/backend/testRabbitMQ.ini"
+rm -f "$STAGING_DIR/backend/rabbitMQLib.inc"
+rm -f "$STAGING_DIR/backend/host.ini"
+rm -f "$STAGING_DIR/backend/path.inc"
+rm -f "$STAGING_DIR/backend/get_host_info.inc"
+
 echo "Pulling files from DMZ VM..."
 scp -r ${DMZ_VM_USER}@${DMZ_VM_IP}:${DMZ_VM_PATH}/. "$STAGING_DIR/dmz/"
 if [ $? -ne 0 ]; then
     echo "ERROR: Failed to pull files from DMZ VM."
     exit 1
 fi
+
+rm -f "$STAGING_DIR/dmz/testRabbitMQ.ini"
+rm -f "$STAGING_DIR/dmz/rabbitMQLib.inc"
+rm -f "$STAGING_DIR/dmz/host.ini"
+rm -f "$STAGING_DIR/dmz/path.inc"
+rm -f "$STAGING_DIR/dmz/get_host_info.inc"
 
 cat > "$STAGING_DIR/manifest.json" <<EOF
 {
