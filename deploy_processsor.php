@@ -1,69 +1,159 @@
 #!/usr/bin/php
 <?php
 
+// deployment controller, sends deploy or rollback command to prod and qa, do health check and take bundle version from bundle sh
+
 
 require_once('path.inc');
 require_once('get_host_info.inc');
 require_once('rabbitMQLib.inc');
 
-// check command arguments
-if ($argc < 4) {
-    echo "Usage:\n";
-    echo "  php deploy_processor.php deploy qa v1 bundle_v1.tgz\n";
-    echo "  php deploy_processor.php rollback qa v1\n";
-    exit(1);
-}
 
 $action  = $argv[1]; // deploy or rollback
 $target  = $argv[2]; // qa or prod
-$version = $argv[3]; // version name
-$bundle  = $argv[4] ?? ""; // bundle file for deploy
+$requestedVersion = $argv[3]; // version name from bundle sh
 
-// validation
-if ($action !== "deploy" && $action !== "rollback") {
-    echo "Invalid action. Use deploy or rollback.\n";
-    exit(1);
+
+// configrations 
+
+// database
+$dbHost = "localhost";
+$dbUser = "admin";
+$dbPass = "123456";
+$dbName = "it490Deploy";
+
+// rabbitmq stuff for two different env
+$rabbitConfigs = [
+    "qa" => [
+        "ini" => "qaRabbitMQ.ini",
+        "serverKey" => "qaDeployServer",
+    ],
+    "prod" => [
+        "ini" => "prodRabbitMQ.ini",
+        "serverKey" => "prodDeployServer",
+    ],
+];
+
+
+// files directory 
+$bundleScript = __DIR__ . "/build_bundle.sh";
+$healthcheckScript = __DIR__ . "/healthCheck.sh";
+$logFile = __DIR__ . "/deployLog.txt";
+
+
+// connect to mysql
+$conn = new mysqli($dbHost, $dbUser, $dbPass, $dbName);
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error . "\n");
 }
 
-if ($target !== "qa" && $target !== "prod") {
-    echo "Invalid target. Use qa or prod.\n";
-    exit(1);
+// functions 
+
+// write log for everthing
+function writeLog(string $logFile, string $message): void
+{
+    $line = date("Y-m-d H:i:s") . " | " . $message . "\n";
+    file_put_contents($logFile, $line, FILE_APPEND);
 }
 
-if ($action === "deploy" && $bundle === "") {
-    echo "Bundle file required for deploy.\n";
-    exit(1);
+
+// send deploy request to qa or prod
+function sendDeployRequest(string $target, string $action, string $version, string $bundleName, array $rabbitConfigs)
+{
+    $client = createRabbitClient($target, $rabbitConfigs);
+
+    $request = [];
+    $request["type"]    = "deploy_command";
+    $request["action"]  = $action;
+    $request["target"]  = $target;
+    $request["version"] = $version;
+    $request["bundle"]  = $bundleName;
+    $request["time"]    = date("Y-m-d H:i:s");
+
+    return $client->send_request($request);
 }
 
-// connect to RabbitMQ
-$client = new rabbitMQClient("testRabbitMQ.ini", "testServer");
-
-// build request
-$request = array();
-$request["type"] = "deploy_command";
-$request["action"] = $action;
-$request["target"] = $target;
-$request["version"] = $version;
-$request["bundle"] = $bundle;
-$request["time"] = date("Y-m-d H:i:s");
-
-// send request
-echo "Sending $action request to $target...\n";
-$response = $client->send_request($request);
-
-// show response from agent
-if (is_array($response) && isset($response["status"])) {
-    echo "Response status: " . $response["status"] . "\n";
-
-    if (isset($response["message"])) {
-        echo "Message: " . $response["message"] . "\n";
+// run bundle script and take version and bundle name from script
+function runBundleScript(string $bundleScript): array
+{
+    if (!file_exists($bundleScript)) {
+        return [
+            "ok" => false,
+            "message" => "Bundle script not found.",
+            "version" => "",
+            "bundle" => "",
+            "output" => ""
+        ];
     }
-} else {
-    echo "No valid response from agent.\n";
+     // run and also take outputs
+    exec("/bin/bash " . escapeshellarg($bundleScript) . " 2>&1", $output, $exitCode);
+ 
+    // if script fails for some reason
+    if ($exitCode !== 0) {
+        return [
+            "ok" => false,
+            "message" => "Bundle script failed.",
+            "version" => "",
+            "bundle" => "",
+            "output" => implode("\n", $output)
+        ];
+    }
+
+    $version = "";
+    $bundle = "";
+
+// take version and bundle from script as output 
+    foreach ($output as $line) {
+
+        if ($line, "VERSION=") === 0 {
+            $version = substr($line, 8);
+
+
+        } elseif ($line, "BUNDLE=") === 0 {
+            $bundle = ($line, 7);
+        }
+    }
+
+// missing file
+    if (!file_exists($bundle)) {
+        return [
+            "ok" => false,
+            "message" => "Bundle file does not exist.",
+            "version" => $version,
+            "bundle" => $bundle,
+            "output" => implode("\n", $output)
+        ];
+    }
+
+    return [
+        "ok" => true,
+        "message" => "Bundle created.",
+        "version" => $version,
+        "bundle" => $bundle,
+        "output" => implode("\n", $output)
+    ];
+}
+
+// run health check on specific target 
+function runHealthCheck(string $script, string $target)
+{
+    if (!file_exists($script)) {
+        return [
+            "ok" => false,
+            "output" => "Health check script not found."
+        ];
+    }
+
+    exec(
+        "/bin/bash " . escapeshellarg($script) . " " . escapeshellarg($target) . " 2>&1",
+        $output,
+        $exitCode
+    );
+
+    return [
+        "ok" => $exitCode === 0,
+        "output" => implode("\n", $output)
+    ];
 }
 
 
-
-
-echo "Done.\n";
-?>
