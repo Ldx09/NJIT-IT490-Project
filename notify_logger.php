@@ -1,5 +1,4 @@
 <?php
-
 require_once __DIR__ . '/notify_config.php';
 
 function notify_log(string $message): void {
